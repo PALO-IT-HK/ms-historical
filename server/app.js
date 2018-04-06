@@ -6,7 +6,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
 var healthcheck = require('./routes/healthcheck');
-var usages = require('./routes/usages');
+var usagesTest = require('./routes/usagesTest');
 var swagger = require('./routes/swagger');
 
 var app = express();
@@ -28,9 +28,10 @@ app.use(function(req, res, next) {
   next();
 });
 
-app.use('/usages/healthcheck', healthcheck);
-app.use('/usages/test', usages);
-app.use('/usages/docs', swagger.router);
+app.use('/usages', usages);
+// app.use('/usages/healthcheck', healthcheck);
+// app.use('/usages/test', usagesTest);
+// app.use('/usages/docs', swagger.router);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
