@@ -9,10 +9,10 @@
  */
 
 const express = require('express');
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
 
 const usageHistory = require('../controllers/usage-history-ctrl');
 
-router.get('*', usageHistory.query);
+router.route('*').get(usageHistory.query);
 
 module.exports.router = router;

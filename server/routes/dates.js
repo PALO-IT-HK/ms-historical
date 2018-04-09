@@ -4,10 +4,10 @@
  */
 
 const express = require('express');
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
 
 const historyQuery = require('./query');
 
-router.get('/:dates', historyQuery.router);
+router.use('/:dates', historyQuery.router);
 
 module.exports.router = router;

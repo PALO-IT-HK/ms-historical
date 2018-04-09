@@ -3,12 +3,12 @@
  */
 
 const express = require('express');
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
 
 const dateRange = require('./daterange');
 const dates = require('./dates');
 
-router.get('/:aggType/daterange', dateRange.router);
-router.get('/:aggType/dates', dates.router);
+router.use('/:aggType/daterange', dateRange.router);
+router.use('/:aggType/dates', dates.router);
 
 module.exports.router = router;

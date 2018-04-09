@@ -3,10 +3,10 @@
  */
 
 const express = require('express');
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
 
 const typesRouter = require('./types');
 
-router.get('/:neLatLng/:swLatLng/type', typesRouter.router);
+router.use('/:neLatLng/:swLatLng/type', typesRouter.router);
 
 module.exports.router = router;

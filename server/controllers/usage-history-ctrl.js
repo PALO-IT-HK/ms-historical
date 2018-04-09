@@ -43,8 +43,9 @@ function query(req, res, next) {
 
     // types: by-hour
     // Breakdown by days - Breakdown by Hour
-    res.status(404).send({
-        status: 'not found'
+    res.status(406).send({
+        status: 'not implemented yet',
+        params: req.params
     });
 }
 

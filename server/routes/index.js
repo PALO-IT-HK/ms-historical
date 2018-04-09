@@ -1,5 +1,5 @@
 const express = require('express');
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
 
 // Docs Endpoint
 const swagger = require('./swagger');
@@ -17,10 +17,10 @@ router.get('/healthcheck', function (req, res, next) {
 router.get('/docs', swagger.router);
 
 // Functional Endpoints
-router.get('/boundary', boundary.router);
-router.get('/top-usage', topUsage.router);
-router.get('/by-district', byDistrict.router);
-router.get('/bikepoints', bikepoints.router);
+router.use('/boundary', boundary.router);
+router.use('/top-usage', topUsage.router);
+router.use('/by-district', byDistrict.router);
+router.use('/bikepoints', bikepoints.router);
 
 // SPIKE
 const usagesTest = require('./usages-test');

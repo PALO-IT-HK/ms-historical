@@ -3,10 +3,10 @@
  */
 
 const express = require('express');
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
 
 const typesRouter = require('./types');
 
-router.get('/:count/type', typesRouter.router);
+router.use('/:count/type', typesRouter.router);
 
 module.exports.router = router;
