@@ -15,4 +15,4 @@ const usageHistory = require('../controllers/usage-history-ctrl');
 
 router.get('*', usageHistory.query);
 
-module.exports.router = router;outer;
+module.exports.router = router;
