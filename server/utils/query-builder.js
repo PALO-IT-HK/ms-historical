@@ -10,7 +10,7 @@ function build(req) {
     req.params.aggType === 'total'
   ) {
     //boundary
-    let { neArray, swLatLng } = getLocation();
+    let { neArray, swLatLng } = getLocation(req);
     let { startDate, endDate } = getDates(req);
     queryString = `
     SELECT id, location, district, lat, lng, sum(start_count) as totalBikesOut, sum(end_count) as totalBikesIn FROM clp_bike_poc.journey_data
@@ -60,7 +60,7 @@ limit ${req.params.count};`;
   return queryString;
 }
 
-function getLocation() {
+function getLocation(req) {
   let neArray = req.params.neLatLng.split(',');
   let swLatLng = req.params.swLatLng.split(',');
   return { neArray, swLatLng };
