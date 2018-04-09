@@ -43,6 +43,9 @@ function query(req, res, next) {
 
     // types: by-hour
     // Breakdown by days - Breakdown by Hour
+    res.status(404).send({
+        status: 'not found'
+    });
 }
 
 module.exports.query = query;
