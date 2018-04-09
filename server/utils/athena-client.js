@@ -5,9 +5,7 @@ let clientConfig = {
   bucketUri: 's3://clp-hist-data/bike-journey/processed/data/'
 };
 let awsConfig = {
-  region: 'ap-southeast-1',
-  accessKeyId: process.env.AWS_ACCESS_KEY,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+  region: 'ap-southeast-1'
 };
 let client = athena.createClient(clientConfig, awsConfig);
 function getDataFromAthena(query) {
