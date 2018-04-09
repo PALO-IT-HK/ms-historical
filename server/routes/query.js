@@ -11,7 +11,7 @@
 const express = require('express');
 const router = express.Router({ mergeParams: true });
 
-const usageHistory = require('../controllers/usage-history-ctrl');
+const usageHistory = require('../controllers/usageHistoryController');
 
 router.route('*').get(usageHistory.query);
 

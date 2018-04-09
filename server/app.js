@@ -28,9 +28,6 @@ app.use(function(req, res, next) {
 });
 
 app.use('/usages', usages);
-// app.use('/usages/healthcheck', healthcheck);
-// app.use('/usages/test', usagesTest);
-// app.use('/usages/docs', swagger.router);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

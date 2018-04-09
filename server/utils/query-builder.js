@@ -48,6 +48,7 @@ limit ${req.params.count};`;
     req.params.aggType &&
     req.params.aggType === 'total'
   ) {
+    //by bikepoints
     let { startDate, endDate } = getDates(req);
     queryString = `SELECT id, location, district, lat, lng, sum(start_count) as totalBikesOut, sum(end_count) as totalBikesIn, SUM(start_count + end_count) as totalBikesCount  FROM clp_bike_poc.journey_data
     WHERE time >= from_iso8601_timestamp('${startDate}T00:00:00') AND time <= from_iso8601_timestamp('${endDate}T23:59:59') AND id in (${
