@@ -4,6 +4,7 @@ function getBoundaryByDay(results) {
   let response = [];
   let groupedResults = _.groupBy(results, 'id');
   _.map(groupedResults, groupData => {
+    _.orderBy(groupData, 'day', 'asc');
     let data = {};
     data.location = groupData[0]['location'];
     data.district = groupData[0]['district'];
