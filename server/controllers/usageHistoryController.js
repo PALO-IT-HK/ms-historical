@@ -1,6 +1,7 @@
 const Promise = require('bluebird');
 const athena = require('../utils/athena-client');
 const queryBuilder = require('../utils/query-builder');
+const transformer = require('../utils/usageHistoryTransformer');
 /**
  * req.params
  *
@@ -47,7 +48,11 @@ function query(req, res, next) {
   // types: by-hour
   // Breakdown by days - Breakdown by Hour
   athena.getDataFromAthena(queryBuilder.build(req)).then(data => {
-    res.status(200).send(data.records);
+    let results = data.records;
+    if (req.params.aggType !== 'total') {
+      results = transformer.getBoundaryByDay(data.records);
+    }
+    res.status(200).send(results);
   });
 }
 
