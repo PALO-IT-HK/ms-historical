@@ -35,8 +35,8 @@ function build(req) {
       let { neArray, swLatLng } = getLocation(req);
       queryString = `SELECT id, location, district, lat, lng, sum(start_count) as totalBikesOut, sum(end_count) as totalBikesIn FROM clp_bike_poc.journey_data
       WHERE time >= from_iso8601_timestamp('${startDate}T00:00:00') AND time <= from_iso8601_timestamp('${endDate}T23:59:59')
-        AND lat BETWEEN ${neArray[0]} AND ${swLatLng[0]}
-        AND lng BETWEEN ${neArray[1]} AND ${swLatLng[1]}
+        AND lat BETWEEN ${swLatLng[0]} AND ${neArray[0]}
+        AND lng BETWEEN ${swLatLng[1]} AND ${neArray[1]}
       GROUP BY id, location, district, lat, lng ORDER BY totalBikesOut desc`;
     } else {
       queryString = getAggTypeQuery(req, 'boundary');
@@ -132,10 +132,10 @@ function getLocationQuery(req, neArray, swLatLng) {
   if (neArray && swLatLng) {
     result = format(
       latlonQuery,
-      neArray[0],
       swLatLng[0],
-      neArray[1],
-      swLatLng[1]
+      neArray[0],
+      swLatLng[1],
+      neArray[1]
     );
   } else if (req.params.bikepoints) {
     result = format(byBikePointsQuery, req.params.bikepoints);
