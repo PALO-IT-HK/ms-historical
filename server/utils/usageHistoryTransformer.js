@@ -1,22 +1,26 @@
 const _ = require('lodash');
+const moment = require('moment');
 
 function getBoundaryByDay(results) {
   let response = [];
   let groupedResults = _.groupBy(results, 'id');
   _.map(groupedResults, groupData => {
-    _.orderBy(groupData, 'day', 'asc');
+    sortedArray = _.orderBy(groupData, 'day', 'asc');
     let data = {};
-    data.location = groupData[0]['location'];
-    data.district = groupData[0]['district'];
-    data.id = groupData[0]['id'];
-    data.lat = groupData[0]['lat'];
-    data.lng = groupData[0]['lng'];
+    data.location = sortedArray[0]['location'];
+    data.district = sortedArray[0]['district'];
+    data.id = sortedArray[0]['id'];
+    data.lat = sortedArray[0]['lat'];
+    data.lng = sortedArray[0]['lng'];
     data.breakdown = [];
     let sumTotalBikesIn = 0;
     let sumTotalBikesOut = 0;
-    _.map(groupData, dayData => {
+    _.map(sortedArray, dayData => {
       let breakdownData = {};
-      breakdownData.ts = dayData.day;
+      let formattedDate = dayData.day.includes('T')
+        ? `${dayData.day}:00Z`
+        : `${dayData.day}T00:00Z`;
+      breakdownData.ts = moment(formattedDate).toISOString();
       breakdownData.bikesIn = dayData.totalBikesIn;
       breakdownData.bikesOut = dayData.totalBikesOut;
       sumTotalBikesIn += parseInt(dayData.totalBikesIn);
