@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const config = require('../config');
 
 const options = {
   swaggerDefinition: {
@@ -17,8 +18,8 @@ const options = {
         description: 'Bike Usage API'
       }
     ],
-    schemes: ['http'],
-    host: 'localhost:3000',
+    schemes: ['https', 'http'],
+    host: config.endpointBaseUrl,
     basePath: '/usages'
   },
   apis: ['./server/routes/query.js']
