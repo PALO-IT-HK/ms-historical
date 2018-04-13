@@ -49,7 +49,7 @@ function query(req, res, next) {
   // Breakdown by days - Breakdown by Hour
   athena.getDataFromAthena(queryBuilder.build(req)).then(data => {
     let results = data.records;
-    if (req.params.aggType !== 'total') {
+    if (req.params.aggType !== 'total' && req.params.aggType !== 'aggregated-by-day') {
       results = transformer.getBoundaryByDay(data.records);
     }
     res.status(200).send(results);

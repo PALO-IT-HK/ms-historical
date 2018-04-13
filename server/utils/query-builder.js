@@ -22,6 +22,8 @@ AND lng BETWEEN {2} AND {3}`;
 
 function build(req) {
   let queryString;
+  const { startDate, endDate } = getDates(req);
+
   if (
     req.params.neLatLng &&
     req.params.swLatLng &&
@@ -29,9 +31,8 @@ function build(req) {
     req.params.endDate &&
     req.params.aggType
   ) {
-    //boundary
+    // boundary
     if (req.params.aggType === 'total') {
-      let { startDate, endDate } = getDates(req);
       let { neArray, swLatLng } = getLocation(req);
       queryString = `SELECT id, location, district, lat, lng, sum(start_count) as totalBikesOut, sum(end_count) as totalBikesIn FROM clp_bike_poc.journey_data
       WHERE time >= from_iso8601_timestamp('${startDate}T00:00:00') AND time <= from_iso8601_timestamp('${endDate}T23:59:59')
@@ -42,9 +43,8 @@ function build(req) {
       queryString = getAggTypeQuery(req, 'boundary');
     }
   } else if (req.params.count && req.params.aggType) {
-    //by count
+    // by count
     if (req.params.aggType === 'total') {
-      let { startDate, endDate } = getDates(req);
       queryString = `SELECT id, location, district, lat, lng, sum(start_count) as totalBikesOut, sum(end_count) as totalBikesIn, SUM(start_count + end_count) as totalBikesCount  FROM clp_bike_poc.journey_data
     WHERE time >= from_iso8601_timestamp('${startDate}T00:00:00') AND time <= from_iso8601_timestamp('${endDate}T23:59:59')
     GROUP BY id, location, district, lat, lng
@@ -54,9 +54,8 @@ limit ${req.params.count};`;
       queryString = getAggTypeQuery(req, 'count');
     }
   } else if (req.params.district && req.params.aggType) {
-    //by district
+    // by district
     if (req.params.aggType === 'total') {
-      let { startDate, endDate } = getDates(req);
       queryString = `SELECT id, location, district, lat, lng, sum(start_count) as totalBikesOut, sum(end_count) as totalBikesIn, SUM(start_count + end_count) as totalBikesCount  FROM clp_bike_poc.journey_data
     WHERE time >= from_iso8601_timestamp('${startDate}T00:00:00') AND time <= from_iso8601_timestamp('${endDate}T23:59:59') AND district='${
         req.params.district
@@ -67,10 +66,24 @@ limit ${req.params.count};`;
       queryString = getAggTypeQuery(req, 'district');
     }
   } else if (req.params.bikepoints && req.params.aggType) {
-    //by bikepoints
-    if (req.params.aggType === 'total') {
-      let { startDate, endDate } = getDates(req);
-      queryString = `SELECT id, location, district, lat, lng, sum(start_count) as totalBikesOut, sum(end_count) as totalBikesIn, SUM(start_count + end_count) as totalBikesCount  FROM clp_bike_poc.journey_data
+    // by bikepoints
+    if (req.params.bikepoints === '_all' && req.params.aggType === 'aggregated-by-day') {
+      const queryArray = [
+        `SELECT substr(to_iso8601(time), 1, 10) as date, sum(start_count) as totalBikesOut, sum(end_count) as totalBikesIn, SUM(start_count + end_count) as totalBikesCount`, 
+        `FROM clp_bike_poc.journey_data`,
+        `WHERE time >= from_iso8601_timestamp('${startDate}T00:00:00') AND time <= from_iso8601_timestamp('${endDate}T23:59:59')`,
+      ];
+      if (req.params.startHour && req.params.endHour) {
+        let { startHour, endHour } = getTimeRange(req);
+        queryArray.push(`AND cast(date_format(time, '%H.%i') AS double) BETWEEN ${startHour} AND ${endHour}`);
+      }
+      queryArray.push(
+        `GROUP BY substr(to_iso8601(time), 1, 10)`,
+        `ORDER BY substr(to_iso8601(time), 1, 10)`
+      );
+      queryString = queryArray.join(' ');
+    } else if (req.params.aggType === 'total') {
+      queryString = `SELECT id, location, district, lat, lng, sum(start_count) as totalBikesOut, sum(end_count) as totalBikesIn, SUM(start_count + end_count) as totalBikesCount FROM clp_bike_poc.journey_data
     WHERE time >= from_iso8601_timestamp('${startDate}T00:00:00') AND time <= from_iso8601_timestamp('${endDate}T23:59:59') AND id in (${
         req.params.bikepoints
       })
@@ -159,18 +172,14 @@ function getTimeRange(req) {
 function getDates(req) {
   let startDate = [
     req.params.startDate.slice(0, 4),
-    '-',
     req.params.startDate.slice(4, 6),
-    '-',
     req.params.startDate.slice(6, 8)
-  ].join('');
+  ].join('-');
   let endDate = [
     req.params.endDate.slice(0, 4),
-    '-',
     req.params.endDate.slice(4, 6),
-    '-',
     req.params.endDate.slice(6, 8)
-  ].join('');
+  ].join('-');
   return { startDate, endDate };
 }
 
