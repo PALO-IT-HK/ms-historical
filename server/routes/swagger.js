@@ -19,9 +19,9 @@ const options = {
     ],
     schemes: ['http'],
     host: 'localhost:3000',
-    basePath: '/'
+    basePath: '/usages'
   },
-  apis: ['./server/routes/usages.js']
+  apis: ['./server/routes/query.js']
 };
 
 const swaggerJSDoc = require('swagger-jsdoc');

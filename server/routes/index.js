@@ -14,7 +14,7 @@ const bikepoints = require('./bikepoints');
 router.get('/healthcheck', function(req, res, next) {
   return res.status(200).send({ status: 'OK', version: '1.0' });
 });
-router.get('/docs', swagger.router);
+router.use('/docs', swagger.router);
 
 // Functional Endpoints
 router.use('/boundary', boundary.router);
