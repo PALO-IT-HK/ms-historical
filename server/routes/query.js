@@ -11,10 +11,10 @@
 const express = require('express');
 const router = express.Router({ mergeParams: true });
 
-const usageHistory = require('../controllers/usageHistoryController');
+const usageHistory = require('../controllers/usage-history-controller');
 /**
  * @swagger
- * /boundary/{neLatLng}/{swLatLng}/type/{aggType}/daterange/{startDate}/{endDate}/timerange/{startHour}/{endHour}:
+ * /boundary/{neLatLng}/{swLatLng}/type/{aggType}/daterange/{startDate}/{endDate}/timerange/{startTime}/{endTime}:
  *   get:
  *     description: Get usage historical data based on bounds,aggregation type,date range and time range
  *     tags:
@@ -52,13 +52,13 @@ const usageHistory = require('../controllers/usageHistoryController');
  *         in: path
  *         required: true
  *         type: string
- *       - name: startHour
+ *       - name: startTime
  *         description: Start of the time range for usage history query in hhmm(24 hrs format), inclusive
  *         default: '1300'
  *         in: path
  *         required: false
  *         type: string
- *       - name: endHour
+ *       - name: endTime
  *         description: End of the time range for usage history query in hhmm(24 hrs format), inclusive
  *         default: '1500'
  *         in: path
@@ -114,7 +114,7 @@ const usageHistory = require('../controllers/usageHistoryController');
  */
 /**
  * @swagger
- * /top-usage/{count}/type/{aggType}/daterange/{startDate}/{endDate}/timerange/{startHour}/{endHour}:
+ * /top-usage/{count}/type/{aggType}/daterange/{startDate}/{endDate}/timerange/{startTime}/{endTime}:
  *   get:
  *     description: Get top usage historical data based aggregation type,date range and time range
  *     tags:
@@ -146,13 +146,13 @@ const usageHistory = require('../controllers/usageHistoryController');
  *         in: path
  *         required: true
  *         type: string
- *       - name: startHour
+ *       - name: startTime
  *         description: Start of the time range for usage history query in hhmm(24 hrs format), inclusive
  *         default: '1300'
  *         in: path
  *         required: false
  *         type: string
- *       - name: endHour
+ *       - name: endTime
  *         description: End of the time range for usage history query in hhmm(24 hrs format), inclusive
  *         default: '1500'
  *         in: path
@@ -202,7 +202,7 @@ const usageHistory = require('../controllers/usageHistoryController');
  */
 /**
  * @swagger
- * /by-district/{district}/type/{aggType}/daterange/{startDate}/{endDate}/timerange/{startHour}/{endHour}:
+ * /by-district/{district}/type/{aggType}/daterange/{startDate}/{endDate}/timerange/{startTime}/{endTime}:
  *   get:
  *     description: Get top usage historical data based on district, aggregation type,date range and time range
  *     tags:
@@ -234,13 +234,13 @@ const usageHistory = require('../controllers/usageHistoryController');
  *         in: path
  *         required: true
  *         type: string
- *       - name: startHour
+ *       - name: startTime
  *         description: Start of the time range for usage history query in hhmm(24 hrs format), inclusive
  *         default: '1300'
  *         in: path
  *         required: false
  *         type: string
- *       - name: endHour
+ *       - name: endTime
  *         description: End of the time range for usage history query in hhmm(24 hrs format), inclusive
  *         default: '1500'
  *         in: path
@@ -290,7 +290,7 @@ const usageHistory = require('../controllers/usageHistoryController');
  */
 /**
  * @swagger
- * /bikepoints/{bikepoints}/type/{aggType}/daterange/{startDate}/{endDate}/timerange/{startHour}/{endHour}:
+ * /bikepoints/{bikepoints}/type/{aggType}/daterange/{startDate}/{endDate}/timerange/{startTime}/{endTime}:
  *   get:
  *     description: Get top usage historical data based on bikepoints, aggregation type,date range and time range
  *     tags:
@@ -322,13 +322,13 @@ const usageHistory = require('../controllers/usageHistoryController');
  *         in: path
  *         required: true
  *         type: string
- *       - name: startHour
+ *       - name: startTime
  *         description: Start of the time range for usage history query in hhmm(24 hrs format), inclusive
  *         default: '1300'
  *         in: path
  *         required: false
  *         type: string
- *       - name: endHour
+ *       - name: endTime
  *         description: End of the time range for usage history query in hhmm(24 hrs format), inclusive
  *         default: '1500'
  *         in: path

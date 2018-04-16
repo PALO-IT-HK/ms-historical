@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "start": "node index.js",
-    "test": "./node_modules/mocha/bin/mocha test/ --colors --timeout 25000 --recursive test/"
+    "start-dev": "nodemon -w server index.js",
+    "test": "mocha server/ --colors --timeout 2000 --recursive",
+    "functional-test": "mocha test/ --colors --timeout 25000 --recursive"
   },
   "dependencies": {
     "athena-client": "^2.3.1",
@@ -17,6 +19,7 @@
     "lodash": "^4.17.5",
     "moment": "^2.22.0",
     "morgan": "~1.6.1",
+    "nodemon": "^1.17.3",
     "request": "^2.85.0",
     "serve-favicon": "~2.3.0",
     "string-format": "^1.0.0",

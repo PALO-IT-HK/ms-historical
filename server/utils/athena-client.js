@@ -15,7 +15,7 @@ function getDataFromAthena(query) {
       .execute(query)
       .toPromise()
       .then(function(data) {
-        console.log(data);
+        // console.log(data);
         resolve(data);
       })
       .catch(function(err) {

@@ -1,185 +1,162 @@
-const format = require('string-format');
-let selectMainQuery = `SELECT id, location, district, lat, lng, sum(start_count) as totalBikesOut, sum(end_count) as totalBikesIn`;
-let selectQueryHour = ` ,substr(to_iso8601(time), 1, 13) as day`;
-let selectQueryDay = ` ,substr(to_iso8601(time), 1, 10) as day`;
-let fromQuery = ` FROM clp_bike_poc.journey_data`;
-let whereMainQuery = ` WHERE time BETWEEN from_iso8601_timestamp('{0}T00:00:00') AND from_iso8601_timestamp('{1}T23:59:59')`;
-let byDayQuery = ` AND id IN (SELECT id FROM clp_bike_poc.journey_data
-  WHERE time >= from_iso8601_timestamp('{0}T00:00:00') AND time <= from_iso8601_timestamp('{1}T23:59:59')
-    {2} {3}
-  GROUP BY id, location, district, lat, lng
-  ORDER by SUM(start_count + end_count) desc
-  {4})`;
-let byHourQuery = ` AND cast(date_format(time, '%H.%i') AS double) BETWEEN {0} AND {1}`;
-let topQuery = ` LIMIT {0}`;
-let byDistrictQuery = ` AND district='{0}'`;
-let byBikePointsQuery = ` AND id in ({})`;
-let groupByHourQuery = ` GROUP BY id, district, location, lat, lng, substr(to_iso8601(time), 1, 13)`;
-let groupByDayQuery = ` GROUP BY id, district, location, lat, lng, substr(to_iso8601(time), 1, 10)`;
-let groupByQuery = ` GROUP BY id, district, location, lat, lng`;
-let latlonQuery = ` AND lat BETWEEN {0} AND {1}
-AND lng BETWEEN {2} AND {3}`;
+const config = require('../config');
 
 function build(req) {
-  let queryString;
-  const { startDate, endDate } = getDates(req);
+  const queryArray = [];
+  const whereClauses = [];
+  let limitClause = '';
 
-  if (
-    req.params.neLatLng &&
-    req.params.swLatLng &&
-    req.params.startDate &&
-    req.params.endDate &&
-    req.params.aggType
-  ) {
-    // boundary
-    if (req.params.aggType === 'total') {
-      let { neArray, swLatLng } = getLocation(req);
-      queryString = `SELECT id, location, district, lat, lng, sum(start_count) as totalBikesOut, sum(end_count) as totalBikesIn FROM clp_bike_poc.journey_data
-      WHERE time >= from_iso8601_timestamp('${startDate}T00:00:00') AND time <= from_iso8601_timestamp('${endDate}T23:59:59')
-        AND lat BETWEEN ${swLatLng[0]} AND ${neArray[0]}
-        AND lng BETWEEN ${swLatLng[1]} AND ${neArray[1]}
-      GROUP BY id, location, district, lat, lng ORDER BY totalBikesOut desc`;
-    } else {
-      queryString = getAggTypeQuery(req, 'boundary');
-    }
-  } else if (req.params.count && req.params.aggType) {
-    // by count
-    if (req.params.aggType === 'total') {
-      queryString = `SELECT id, location, district, lat, lng, sum(start_count) as totalBikesOut, sum(end_count) as totalBikesIn, SUM(start_count + end_count) as totalBikesCount  FROM clp_bike_poc.journey_data
-    WHERE time >= from_iso8601_timestamp('${startDate}T00:00:00') AND time <= from_iso8601_timestamp('${endDate}T23:59:59')
-    GROUP BY id, location, district, lat, lng
-    ORDER by totalBikesCount desc
-limit ${req.params.count};`;
-    } else {
-      queryString = getAggTypeQuery(req, 'count');
-    }
-  } else if (req.params.district && req.params.aggType) {
-    // by district
-    if (req.params.aggType === 'total') {
-      queryString = `SELECT id, location, district, lat, lng, sum(start_count) as totalBikesOut, sum(end_count) as totalBikesIn, SUM(start_count + end_count) as totalBikesCount  FROM clp_bike_poc.journey_data
-    WHERE time >= from_iso8601_timestamp('${startDate}T00:00:00') AND time <= from_iso8601_timestamp('${endDate}T23:59:59') AND district='${
-        req.params.district
-      }'
-    GROUP BY id, location, district, lat, lng
-    ORDER by totalBikesCount desc`;
-    } else {
-      queryString = getAggTypeQuery(req, 'district');
-    }
-  } else if (req.params.bikepoints && req.params.aggType) {
-    // by bikepoints
-    if (req.params.bikepoints === '_all' && req.params.aggType === 'aggregated-by-day') {
-      const queryArray = [
-        `SELECT substr(to_iso8601(time), 1, 10) as date, sum(start_count) as totalBikesOut, sum(end_count) as totalBikesIn, SUM(start_count + end_count) as totalBikesCount`, 
-        `FROM clp_bike_poc.journey_data`,
-        `WHERE time >= from_iso8601_timestamp('${startDate}T00:00:00') AND time <= from_iso8601_timestamp('${endDate}T23:59:59')`,
-      ];
-      if (req.params.startHour && req.params.endHour) {
-        let { startHour, endHour } = getTimeRange(req);
-        queryArray.push(`AND cast(date_format(time, '%H.%i') AS double) BETWEEN ${startHour} AND ${endHour}`);
-      }
-      queryArray.push(
-        `GROUP BY substr(to_iso8601(time), 1, 10)`,
-        `ORDER BY substr(to_iso8601(time), 1, 10)`
-      );
-      queryString = queryArray.join(' ');
-    } else if (req.params.aggType === 'total') {
-      queryString = `SELECT id, location, district, lat, lng, sum(start_count) as totalBikesOut, sum(end_count) as totalBikesIn, SUM(start_count + end_count) as totalBikesCount FROM clp_bike_poc.journey_data
-    WHERE time >= from_iso8601_timestamp('${startDate}T00:00:00') AND time <= from_iso8601_timestamp('${endDate}T23:59:59') AND id in (${
-        req.params.bikepoints
-      })
-    GROUP BY id, location, district, lat, lng
-    ORDER by totalBikesCount desc`;
-    } else {
-      queryString = getAggTypeQuery(req, 'bikepoints');
-    }
+  // DatesRange: req.params.startDate / req.params.endDate
+  // Build WHERE CLAUSE THAT FILTER daterange
+  //   time BETWEEN from_iso8601_timestamp('2018-01-01T00:00:00') AND from_iso8601_timestamp('2018-01-14T23:59:59')
+  const { startDate, endDate } = getDates(req);
+  if (startDate && endDate) {
+    whereClauses.push(`time >= from_iso8601_timestamp('${startDate}T00:00:00') AND time <= from_iso8601_timestamp('${endDate}T23:59:59')`);
   }
-  return queryString;
+
+  // Time / Time Range
+  // req.params.startTime / req.params.endTime
+  // Build WHERE CLAUSE THAT FILTER START/END TIME
+  //   cast(date_format(time, '%H.%i') AS double) BETWEEN 13.00 AND 14.59
+  const { startTime, endTime } = getTimeRange(req);
+  if (startTime && endTime) {
+    whereClauses.push(`cast(date_format(time, '%H.%i') AS double) BETWEEN ${startTime} AND ${endTime}`);
+  }
+
+  // boundary - req.params.neLatLng, req.params.swLatLng
+  // Build WHERE CLAUSE FOR LATLNG BOUNDARY
+  //   lat between ${west} and ${east} AND lng between ${south} and ${north}
+  const { neLatLng, swLatLng } = getLocation(req);
+  if (neLatLng && swLatLng) {
+    whereClauses.push(`lat BETWEEN ${swLatLng[0]} AND ${neLatLng[0]}`, `lng BETWEEN ${swLatLng[1]} AND ${neLatLng[1]}`);
+  }
+
+  // by-district - req.params.districts
+  // Build WHERE CLAUSE FOR DISTRICT
+  //   district IN (districts.map(d => `'${d}'`).join(','))
+  if (req.params.districts) {
+    const districtsInClauses = req.params.districts.split(',').map(d => `'${d.trim()}'`).join(',');
+    whereClauses.push(`district IN (${districtsInClauses})`);
+  }
+
+  // bikepoints - req.params.bikepoints
+  // Build WHERE CLAUSE FOR BIKEPOINTS
+  //   id IN (ids.join(','))
+  if (req.params.bikepoints && req.params.bikepoints !== '_all') { // Do not filter by bikepoints if the target is _all
+    const idInClauses = req.params.bikepoints.split(',').map(id => id.trim()).join(',');
+    whereClauses.push(`id IN (${idInClauses})`);
+  }
+
+  // top-usage - req.params.count
+  // If type is Total
+  // ORDER BY totalBikesIn + totalBikesOut
+  // LIMIT X
+  if (req.params.count) {
+    limitClause = `LIMIT ${req.params.count}`;
+  }
+
+  const whereClause = whereClauses.join(' AND ');
+  const fromClause = `FROM ${config.athenaDb}.${config.athenaTable}`;
+  
+  switch (req.params.aggType) {
+    case 'total':
+    // types: total
+    // Do not breakdown
+      queryArray.push(
+        `SELECT id, location, district, lat, lng,`, 
+        `SUM(start_count) as totalBikesOut, SUM(end_count) as totalBikesIn, SUM(start_count + end_count) as totalBikesCount`,
+        fromClause,
+        `WHERE ${whereClause}`,
+        `GROUP BY id, location, district, lat, lng`,
+        `ORDER BY totalBikesCount DESC`,
+        limitClause,
+      );
+      return queryArray.join(' ');
+
+    case 'aggregated-by-day':
+    // type: aggregated-by-day
+    // Do not breakdown
+      queryArray.push(
+        `SELECT substr(to_iso8601(time), 1, 10) as date,`,
+        `SUM(start_count) as totalBikesOut, SUM(end_count) as totalBikesIn, SUM(start_count + end_count) as totalBikesCount`,
+        fromClause,
+        `WHERE ${whereClause}`,
+        `GROUP BY substr(to_iso8601(time), 1, 10)`,
+        `ORDER BY substr(to_iso8601(time), 1, 10) ASC`,
+        limitClause,
+      );
+      return queryArray.join(' ');
+
+    case 'by-day':
+    // types: by-day
+    // Breakdown by days 
+      queryArray.push(
+        `WITH _tmptable AS`,
+        `(SELECT id, district, location, lat, lng, time, start_count, end_count`,
+        fromClause,
+        `WHERE ${whereClause})`,
+        `SELECT id, district, location, lat, lng, substr(to_iso8601(time), 1, 10) AS ts,`,
+        `SUM(start_count) as bikesOut, SUM(end_count) as bikesIn, SUM(start_count + end_count) as bikesCount`,
+        `FROM _tmptable`,
+        `WHERE id in (SELECT id FROM _tmptable GROUP BY id, district, location, lat, lng ORDER BY SUM(start_count + end_count) DESC ${limitClause})`,
+        `GROUP BY id, district, location, lat, lng, substr(to_iso8601(time), 1, 10)`,
+        `ORDER BY id, ts ASC`,
+      );
+      return queryArray.join(' ');
+
+    case 'by-hour':
+    // types: by-hour
+    // Breakdown by hours
+      queryArray.push(
+        `WITH _tmptable AS `,
+        `(SELECT id, district, location, lat, lng, time, start_count, end_count`,
+        fromClause,
+        `WHERE ${whereClause})`,
+        `SELECT id, district, location, lat, lng, substr(to_iso8601(time), 1, 13) AS ts,`,
+        `SUM(start_count) as bikesOut, SUM(end_count) as bikesIn, SUM(start_count + end_count) as bikesCount`,
+        `FROM _tmptable`,
+        `WHERE id in (SELECT id FROM _tmptable GROUP BY id, district, location, lat, lng ORDER BY SUM(start_count + end_count) DESC ${limitClause})`,
+        `GROUP BY id, district, location, lat, lng, substr(to_iso8601(time), 1, 13)`,
+        `ORDER BY id, ts ASC`,
+      );
+      return queryArray.join(' ');
+
+    default:
+      return undefined;
+  }
 }
 
 function getLocation(req) {
-  let neArray, swLatLng;
+  let neLatLng, swLatLng;
   if (req.params.neLatLng && req.params.swLatLng) {
-    neArray = req.params.neLatLng.split(',');
+    neLatLng = req.params.neLatLng.split(',');
     swLatLng = req.params.swLatLng.split(',');
   }
-  return { neArray, swLatLng };
-}
-
-function getAggTypeQuery(req, endPointType) {
-  let query;
-  let { neArray, swLatLng } = getLocation(req);
-  let { startDate, endDate } = getDates(req);
-  let { startHour, endHour } = getTimeRange(req);
-
-  let locationQuery = getLocationQuery(req, neArray, swLatLng);
-  let topCountQuery = req.params.count
-    ? format(topQuery, req.params.count)
-    : '';
-  let timeRangeData =
-    startHour && endHour ? format(byHourQuery, startHour, endHour) : '';
-  let byHourOrDay =
-    req.params.aggType === 'by-day' ? selectQueryDay : selectQueryHour;
-  let byHourOrDayGrouping =
-    req.params.aggType === 'by-day' ? groupByDayQuery : groupByHourQuery;
-  query =
-    selectMainQuery +
-    byHourOrDay +
-    fromQuery +
-    format(whereMainQuery, startDate, endDate) +
-    timeRangeData +
-    format(
-      byDayQuery,
-      startDate,
-      endDate,
-      timeRangeData,
-      locationQuery,
-      topCountQuery
-    ) +
-    byHourOrDayGrouping;
-
-  return query;
-}
-
-function getLocationQuery(req, neArray, swLatLng) {
-  let result;
-  if (neArray && swLatLng) {
-    result = format(
-      latlonQuery,
-      swLatLng[0],
-      neArray[0],
-      swLatLng[1],
-      neArray[1]
-    );
-  } else if (req.params.bikepoints) {
-    result = format(byBikePointsQuery, req.params.bikepoints);
-  } else if (req.params.district) {
-    result = format(byDistrictQuery, req.params.district);
-  } else {
-    result = '';
-  }
-  return result;
+  return { neLatLng, swLatLng };
 }
 
 function getTimeRange(req) {
-  let startHour, endHour;
-  if (req.params.startHour && req.params.endHour) {
-    startHour = `${req.params.startHour.substr(0, 2)}.00`;
-    endHour = `${req.params.endHour.substr(0, 2)}.59`;
+  let startTime, endTime;
+  if (req.params.startTime && req.params.endTime) {
+    startTime = `${req.params.startTime.substr(0, 2)}.${req.params.endTime.substr(2, 2)}`;
+    endTime = `${req.params.endTime.substr(0, 2)}.${req.params.endTime.substr(2, 2)}`;
   }
-  return { startHour, endHour };
+  return { startTime, endTime };
 }
 
 function getDates(req) {
-  let startDate = [
-    req.params.startDate.slice(0, 4),
-    req.params.startDate.slice(4, 6),
-    req.params.startDate.slice(6, 8)
-  ].join('-');
-  let endDate = [
-    req.params.endDate.slice(0, 4),
-    req.params.endDate.slice(4, 6),
-    req.params.endDate.slice(6, 8)
-  ].join('-');
+  let startDate, endDate;
+  if (req.params.startDate && req.params.endDate) {
+    startDate = [
+      req.params.startDate.slice(0, 4),
+      req.params.startDate.slice(4, 6),
+      req.params.startDate.slice(6, 8)
+    ].join('-');
+    endDate = [
+      req.params.endDate.slice(0, 4),
+      req.params.endDate.slice(4, 6),
+      req.params.endDate.slice(6, 8)
+    ].join('-');
+  }
   return { startDate, endDate };
 }
 
