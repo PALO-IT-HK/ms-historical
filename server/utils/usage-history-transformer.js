@@ -12,7 +12,7 @@ function groupByBikepoints(results) {
     'id',
   );
 
-  return _orderBy(_.map(groupedResults, dataById => {
+  return _.orderBy(_.map(groupedResults, dataById => {
     const sortedData = _.orderBy(dataById, 'ts', 'asc');
 
     return {
