@@ -12,7 +12,7 @@ function groupByBikepoints(results) {
     'id',
   );
 
-  return _.map(groupedResults, dataById => {
+  return _orderBy(_.map(groupedResults, dataById => {
     const sortedData = _.orderBy(dataById, 'ts', 'asc');
 
     return {
@@ -31,7 +31,7 @@ function groupByBikepoints(results) {
         bikesCount: entry.bikesCount,
       })),
     };
-  });
+  }), 'totalBikesCount', 'desc');
 }
 
 module.exports = {
