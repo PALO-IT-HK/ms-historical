@@ -1,6 +1,20 @@
 version: 2
 jobs:
-  build:
+  unit_test:
+    working_directory: /tmp/ms-historical
+    docker:
+      - image: circleci/node:8
+    steps:
+      - checkout
+      - restore_cache:
+          key: node-module-cache-{{ checksum "package.json" }}
+      - run: npm install
+      - run: npm test
+      - save_cache:
+          key: node-module-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+  build_and_deploy:
     working_directory: /app
     docker:
       - image: docker:17.03.0-ce-git
@@ -34,26 +48,7 @@ jobs:
               docker tag app $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$DOCKER_IMAGE:$CIRCLE_SHA1
               docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$DOCKER_IMAGE:$CIRCLE_SHA1
               # Create task for docker deploy
-              task_template='[
-                {
-                  "name": "%s",
-                  "image": "%s.dkr.ecr.%s.amazonaws.com/%s:%s",
-                  "essential": true,
-                  "portMappings": [
-                    {
-                      "containerPort": 3000,
-                      "hostPort": 0,
-                      "protocol": "tcp"
-                    }
-                  ],
-                  "cpu": 0,
-                  "memoryReservation": 256,
-                  "environment" : [
-                      { "name" : "NODE_ENV", "value" : "production" },
-                      { "name" : "ENDPOINT_BASEINTERFACE", "value" : "%s" }
-                  ]
-                }
-              ]'
+              task_template=$(cat .ecs-task-definition.json)
               echo "$task_template"
               task_def=$(printf "$task_template" $TASK $AWS_ACCOUNT_ID $AWS_REGION $TASK $CIRCLE_SHA1 $ENDPOINT_BASEINTERFACE)
               echo "$task_def"
@@ -65,3 +60,22 @@ jobs:
               aws ecs update-service --cluster "$CLUSTER" --service "$SERVICE" --task-definition "$TASK":"$revision"
               return 0
             fi
+
+workflows:
+  version: 2
+  build_test_and_deploy:
+    jobs:
+      - unit_test:
+          filters:
+            tags:
+              only: /.*/
+      - build_and_deploy:
+          requires:
+            - unit_test
+          filters:
+            branches:
+              only:
+                - develop
+                - master
+            tags:
+              only: /.*/
