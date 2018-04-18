@@ -49,9 +49,7 @@ jobs:
               docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$DOCKER_IMAGE:$CIRCLE_SHA1
               # Create task for docker deploy
               task_template=$(cat .ecs-task-definition.json)
-              echo "$task_template"
               task_def=$(printf "$task_template" $TASK $AWS_ACCOUNT_ID $AWS_REGION $TASK $CIRCLE_SHA1 $ENDPOINT_BASEINTERFACE)
-              echo "$task_def"
               # Register task definition
               json=$(aws ecs register-task-definition --container-definitions "$task_def" --family "$FAMILY" --task-role-arn "arn:aws:iam::781857564217:role/athena-ecs")
               # Grab revision # using regular bash and grep
