@@ -9,6 +9,7 @@ jobs:
       - restore_cache:
           key: node-module-cache-{{ checksum "package.json" }}
       - run: npm install
+      - run: npm lint
       - run: npm test
       - save_cache:
           key: node-module-cache-{{ checksum "package.json" }}

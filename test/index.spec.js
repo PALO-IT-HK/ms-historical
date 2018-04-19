@@ -1,13 +1,11 @@
-var app = require('../server/routes');
-var chai = require('chai');
-var request = require('supertest');
-var api = request('http://localhost:3000');
+const { expect } = require('chai');
+const request = require('supertest');
 
-var expect = chai.expect;
+const api = request('http://localhost:3000');
 
-describe('Index / ', function() {
-  it('should return OK', function(done) {
-    api.get('/usages/healthcheck').end(function(err, res) {
+describe('Index / ', () => {
+  it('should return OK', (done) => {
+    api.get('/usages/healthcheck').end((err, res) => {
       if (err) {
         console.log(err);
       }

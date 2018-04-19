@@ -6,5 +6,5 @@ module.exports = {
   athenaResultsBucket:
     process.env.ATHENA_RESULT_BUCKET ||
     's3://aws-athena-query-usages-results-781857564217-ap-southeast-1',
-  is_mock_data: false
+  is_mock_data: false,
 };
