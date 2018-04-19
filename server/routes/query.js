@@ -12,7 +12,7 @@ const express = require('express');
 
 const router = express.Router({ mergeParams: true });
 
-const usageHistory = require('../controllers/usage-history-controller');
+const { queryUsage } = require('../controllers/usage-history-controller');
 /**
  * @swagger
  * /boundary/{neLatLng}/{swLatLng}/type/{aggType}/daterange/{startDate}/{endDate}/timerange/{startTime}/{endTime}:
@@ -377,6 +377,6 @@ const usageHistory = require('../controllers/usage-history-controller');
  *       200:
  *         description: results
  */
-router.route('*').get(usageHistory.query);
+router.route('*').get(queryUsage);
 
 module.exports.router = router;
